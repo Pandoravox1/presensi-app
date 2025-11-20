@@ -5,7 +5,7 @@ import { Modal } from './Modal';
 
 interface StudentManagementProps {
   students: Student[];
-  onAdd: (student: Student) => void;
+  onAdd: (student: Omit<Student, 'id'>) => void;
   onUpdate: (student: Student) => void;
   onDelete: (id: string) => void;
 }
@@ -39,10 +39,7 @@ export const StudentManagement: React.FC<StudentManagementProps> = ({ students, 
     if (editingStudent) {
       onUpdate({ ...editingStudent, ...formData });
     } else {
-      onAdd({
-        id: Math.random().toString(36).substr(2, 9),
-        ...formData
-      });
+      onAdd({ ...formData });
     }
     setIsModalOpen(false);
   };

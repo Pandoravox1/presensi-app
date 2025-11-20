@@ -87,7 +87,7 @@ export const AttendanceSheet: React.FC<AttendanceSheetProps> = ({
               <h2 className="text-2xl md:text-3xl font-display font-bold text-black tracking-tight">{className}</h2>
               <div className="flex items-center gap-2 mt-1">
                 <span className="px-2 py-0.5 rounded-md bg-gray-100 text-xs font-semibold text-gray-600">{date}</span>
-                <span className="text-gray-400 text-xs">•</span>
+                <span className="text-gray-400 text-xs">|</span>
                 <span className="text-gray-500 text-xs">{students.length} Siswa</span>
               </div>
             </div>
@@ -178,3 +178,4 @@ export const AttendanceSheet: React.FC<AttendanceSheetProps> = ({
     </div>
   );
 };
+

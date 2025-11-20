@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { StatCard } from './components/StatCard';
 import { AttendanceSheet } from './components/AttendanceSheet';
@@ -6,19 +6,62 @@ import { StudentManagement } from './components/StudentManagement';
 import { ClassManagement } from './components/ClassManagement';
 import { MOCK_CLASSES, MOCK_STUDENTS, generateMockHistory } from './constants';
 import { AttendanceRecord, ViewState, Student, ClassGroup } from './types';
-import { Users, CheckCircle2, AlertTriangle, ArrowRight, Calendar } from 'lucide-react';
+import { Users, CheckCircle2, AlertTriangle, ArrowRight, Calendar, Loader2 } from 'lucide-react';
 import { BarChart, Bar, XAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import {
+  fetchStudents,
+  fetchClasses,
+  fetchAttendance,
+  createStudent,
+  updateStudent as updateStudentService,
+  deleteStudent as deleteStudentService,
+  createClass as createClassService,
+  updateClass as updateClassService,
+  deleteClass as deleteClassService,
+  saveAttendanceRecords,
+} from './services/dataService';
 
 const App: React.FC = () => {
   const [activeView, setActiveView] = useState<ViewState>('DASHBOARD');
   const [selectedClassId, setSelectedClassId] = useState<string | null>(null);
   
   // State Management for Data (CRUD)
-  const [students, setStudents] = useState<Student[]>(MOCK_STUDENTS);
-  const [classes, setClasses] = useState<ClassGroup[]>(MOCK_CLASSES);
-  const [attendanceHistory, setAttendanceHistory] = useState<AttendanceRecord[]>(generateMockHistory());
+  const [students, setStudents] = useState<Student[]>([]);
+  const [classes, setClasses] = useState<ClassGroup[]>([]);
+  const [attendanceHistory, setAttendanceHistory] = useState<AttendanceRecord[]>([]);
   
   const [currentDate] = useState(new Date().toISOString().split('T')[0]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const loadData = async () => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const [studentData, classData, attendanceData] = await Promise.all([
+          fetchStudents(),
+          fetchClasses(),
+          fetchAttendance(),
+        ]);
+        setStudents(studentData);
+        setClasses(classData);
+        setAttendanceHistory(attendanceData);
+      } catch (err: any) {
+        console.error(err);
+        setError(err?.message || 'Gagal memuat data dari Supabase. Menggunakan data contoh.');
+        // fallback agar UI tetap jalan
+        setStudents(MOCK_STUDENTS);
+        setClasses(MOCK_CLASSES);
+        setAttendanceHistory(generateMockHistory());
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadData();
+  }, []);
 
   // --- Derived State ---
   const selectedClass = classes.find(c => c.id === selectedClassId);
@@ -49,39 +92,111 @@ const App: React.FC = () => {
   };
 
   const handleSaveAttendance = (newRecords: AttendanceRecord[]) => {
-    const filteredHistory = attendanceHistory.filter(r => 
-      !(r.classId === newRecords[0].classId && r.date === newRecords[0].date)
-    );
-    setAttendanceHistory([...filteredHistory, ...newRecords]);
-    setActiveView('DASHBOARD');
-    setSelectedClassId(null);
+    setIsSyncing(true);
+    setError(null);
+    saveAttendanceRecords(newRecords)
+      .then(() => {
+        const filteredHistory = attendanceHistory.filter(r => 
+          !(r.classId === newRecords[0].classId && r.date === newRecords[0].date)
+        );
+        setAttendanceHistory([...filteredHistory, ...newRecords]);
+        setActiveView('DASHBOARD');
+        setSelectedClassId(null);
+      })
+      .catch((err) => {
+        console.error(err);
+        setError(err?.message || 'Gagal menyimpan presensi.');
+      })
+      .finally(() => setIsSyncing(false));
   };
 
   // Student CRUD
-  const handleAddStudent = (student: Student) => {
-    setStudents([...students, student]);
+  const handleAddStudent = async (student: Omit<Student, 'id'>) => {
+    setIsSyncing(true);
+    setError(null);
+    try {
+      const created = await createStudent(student);
+      setStudents([...students, created]);
+    } catch (err: any) {
+      console.error(err);
+      setError(err?.message || 'Gagal menambah siswa.');
+    } finally {
+      setIsSyncing(false);
+    }
   };
-  const handleUpdateStudent = (updatedStudent: Student) => {
-    setStudents(students.map(s => s.id === updatedStudent.id ? updatedStudent : s));
+  const handleUpdateStudent = async (updatedStudent: Student) => {
+    setIsSyncing(true);
+    setError(null);
+    try {
+      const saved = await updateStudentService(updatedStudent);
+      setStudents(students.map(s => s.id === saved.id ? saved : s));
+    } catch (err: any) {
+      console.error(err);
+      setError(err?.message || 'Gagal memperbarui siswa.');
+    } finally {
+      setIsSyncing(false);
+    }
   };
-  const handleDeleteStudent = (id: string) => {
-    setStudents(students.filter(s => s.id !== id));
-    // Remove student from all classes
-    setClasses(classes.map(cls => ({
-      ...cls,
-      studentIds: cls.studentIds.filter(sid => sid !== id)
-    })));
+  const handleDeleteStudent = async (id: string) => {
+    setIsSyncing(true);
+    setError(null);
+    try {
+      await deleteStudentService(id);
+      setStudents(students.filter(s => s.id !== id));
+      // Remove student from all classes locally
+      setClasses(classes.map(cls => ({
+        ...cls,
+        studentIds: cls.studentIds.filter(sid => sid !== id)
+      })));
+      setAttendanceHistory(attendanceHistory.filter(r => r.studentId !== id));
+    } catch (err: any) {
+      console.error(err);
+      setError(err?.message || 'Gagal menghapus siswa.');
+    } finally {
+      setIsSyncing(false);
+    }
   };
 
   // Class CRUD
-  const handleAddClass = (cls: ClassGroup) => {
-    setClasses([...classes, cls]);
+  const handleAddClass = async (cls: Omit<ClassGroup, 'id'>) => {
+    setIsSyncing(true);
+    setError(null);
+    try {
+      const created = await createClassService(cls);
+      setClasses([...classes, created]);
+    } catch (err: any) {
+      console.error(err);
+      setError(err?.message || 'Gagal menambah kelas.');
+    } finally {
+      setIsSyncing(false);
+    }
   };
-  const handleUpdateClass = (updatedClass: ClassGroup) => {
-    setClasses(classes.map(c => c.id === updatedClass.id ? updatedClass : c));
+  const handleUpdateClass = async (updatedClass: ClassGroup) => {
+    setIsSyncing(true);
+    setError(null);
+    try {
+      const saved = await updateClassService(updatedClass);
+      setClasses(classes.map(c => c.id === saved.id ? saved : c));
+    } catch (err: any) {
+      console.error(err);
+      setError(err?.message || 'Gagal memperbarui kelas.');
+    } finally {
+      setIsSyncing(false);
+    }
   };
-  const handleDeleteClass = (id: string) => {
-    setClasses(classes.filter(c => c.id !== id));
+  const handleDeleteClass = async (id: string) => {
+    setIsSyncing(true);
+    setError(null);
+    try {
+      await deleteClassService(id);
+      setClasses(classes.filter(c => c.id !== id));
+      setAttendanceHistory(attendanceHistory.filter(r => r.classId !== id));
+    } catch (err: any) {
+      console.error(err);
+      setError(err?.message || 'Gagal menghapus kelas.');
+    } finally {
+      setIsSyncing(false);
+    }
   };
 
   const CustomTooltip = ({ active, payload }: any) => {
@@ -101,6 +216,18 @@ const App: React.FC = () => {
       <Sidebar activeView={activeView === 'CLASS_DETAIL' ? 'DASHBOARD' : activeView} setActiveView={(v) => { setActiveView(v); setSelectedClassId(null); }} />
       
       <main className="ml-20 lg:ml-64 flex-1 p-6 lg:p-10 max-w-screen-2xl mx-auto transition-all duration-300">
+        {error && (
+          <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm">
+            {error}
+          </div>
+        )}
+
+        {(isLoading || isSyncing) && (
+          <div className="mb-6 bg-white border border-border px-4 py-3 rounded-xl text-sm text-gray-600 flex items-center gap-2 shadow-sm">
+            <Loader2 className="animate-spin" size={16} />
+            <span>{isLoading ? 'Memuat data...' : 'Menyimpan perubahan...'}</span>
+          </div>
+        )}
         
         {/* DASHBOARD VIEW */}
         {activeView === 'DASHBOARD' && (
@@ -148,7 +275,7 @@ const App: React.FC = () => {
                 <div className="flex items-center justify-between">
                   <h3 className="text-xl font-display font-bold tracking-tight">Jadwal Kelas</h3>
                   <button onClick={() => setActiveView('CLASSES')} className="text-sm font-medium text-gray-500 hover:text-black transition-colors">
-                    Kelola Kelas →
+                    Kelola Kelas &gt;
                   </button>
                 </div>
                 
@@ -265,3 +392,4 @@ const App: React.FC = () => {
 };
 
 export default App;
+
