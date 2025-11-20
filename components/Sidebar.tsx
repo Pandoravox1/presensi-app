@@ -5,9 +5,10 @@ import { ViewState } from '../types';
 interface SidebarProps {
   activeView: ViewState;
   setActiveView: (view: ViewState) => void;
+  onLogout?: () => void;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView }) => {
+export const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, onLogout }) => {
   const menuItems = [
     { id: 'DASHBOARD', label: 'Overview', icon: LayoutGrid },
     { id: 'CLASSES', label: 'Kelas', icon: School },
@@ -54,7 +55,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView }) =
           <span className="hidden lg:block">Pengaturan</span>
         </button>
         <div className="pt-2">
-          <button className="w-full flex items-center justify-center lg:justify-start space-x-0 lg:space-x-3 px-3 lg:px-4 py-3 rounded-xl text-sm font-medium text-red-500 hover:bg-red-50 transition-all">
+          <button
+            onClick={onLogout}
+            className="w-full flex items-center justify-center lg:justify-start space-x-0 lg:space-x-3 px-3 lg:px-4 py-3 rounded-xl text-sm font-medium text-red-500 hover:bg-red-50 transition-all"
+          >
             <LogOut size={20} />
             <span className="hidden lg:block">Log Out</span>
           </button>

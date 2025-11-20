@@ -8,6 +8,7 @@ import { MOCK_CLASSES, MOCK_STUDENTS, generateMockHistory } from './constants';
 import { AttendanceRecord, ViewState, Student, ClassGroup } from './types';
 import { Users, CheckCircle2, AlertTriangle, ArrowRight, Calendar, Loader2 } from 'lucide-react';
 import { BarChart, Bar, XAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import { AdminLogin } from './components/AdminLogin';
 import {
   fetchStudents,
   fetchClasses,
@@ -22,6 +23,8 @@ import {
 } from './services/dataService';
 
 const App: React.FC = () => {
+  const [isAuthed, setIsAuthed] = useState<boolean>(() => sessionStorage.getItem('admin_authed') === 'true');
+
   const [activeView, setActiveView] = useState<ViewState>('DASHBOARD');
   const [selectedClassId, setSelectedClassId] = useState<string | null>(null);
   
@@ -36,6 +39,7 @@ const App: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!isAuthed) return;
     const loadData = async () => {
       setIsLoading(true);
       setError(null);
@@ -61,7 +65,7 @@ const App: React.FC = () => {
     };
 
     loadData();
-  }, []);
+  }, [isAuthed]);
 
   // --- Derived State ---
   const selectedClass = classes.find(c => c.id === selectedClassId);
@@ -199,6 +203,16 @@ const App: React.FC = () => {
     }
   };
 
+  const handleLogout = () => {
+    sessionStorage.removeItem('admin_authed');
+    setIsAuthed(false);
+    setActiveView('DASHBOARD');
+  };
+
+  if (!isAuthed) {
+    return <AdminLogin onSuccess={() => setIsAuthed(true)} error={error} />;
+  }
+
   const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
       return (
@@ -213,7 +227,11 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-offwhite flex font-sans">
-      <Sidebar activeView={activeView === 'CLASS_DETAIL' ? 'DASHBOARD' : activeView} setActiveView={(v) => { setActiveView(v); setSelectedClassId(null); }} />
+      <Sidebar
+        activeView={activeView === 'CLASS_DETAIL' ? 'DASHBOARD' : activeView}
+        setActiveView={(v) => { setActiveView(v); setSelectedClassId(null); }}
+        onLogout={handleLogout}
+      />
       
       <main className="ml-20 lg:ml-64 flex-1 p-6 lg:p-10 max-w-screen-2xl mx-auto transition-all duration-300">
         {error && (
