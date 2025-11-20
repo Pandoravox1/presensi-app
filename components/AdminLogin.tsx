@@ -79,7 +79,7 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onSuccess, error }) => {
         </form>
 
         <p className="text-xs text-gray-400 text-center">
-          Set env <code>VITE_ADMIN_USERNAME</code> dan <code>VITE_ADMIN_PASSWORD</code> untuk mengatur kredensial.
+          Dibuat oleh Frenaldi. Hak cipta © Frenaldi.
         </p>
       </div>
     </div>
