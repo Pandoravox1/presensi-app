@@ -38,4 +38,4 @@ export interface AttendanceSummary {
   rate: number;
 }
 
-export type ViewState = 'DASHBOARD' | 'CLASS_DETAIL' | 'HISTORY' | 'STUDENTS' | 'ANALYTICS';
+export type ViewState = 'DASHBOARD' | 'CLASS_DETAIL' | 'HISTORY' | 'STUDENTS' | 'ANALYTICS' | 'CLASSES';

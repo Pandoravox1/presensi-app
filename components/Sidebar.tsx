@@ -1,16 +1,18 @@
 import React from 'react';
-import { LayoutGrid, History, Users, Settings, LogOut, PieChart } from 'lucide-react';
+import { LayoutGrid, History, Users, Settings, LogOut, PieChart, School } from 'lucide-react';
+import { ViewState } from '../types';
 
 interface SidebarProps {
-  activeView: string;
-  setActiveView: (view: any) => void;
+  activeView: ViewState;
+  setActiveView: (view: ViewState) => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView }) => {
   const menuItems = [
     { id: 'DASHBOARD', label: 'Overview', icon: LayoutGrid },
-    { id: 'HISTORY', label: 'Riwayat', icon: History },
+    { id: 'CLASSES', label: 'Kelas', icon: School },
     { id: 'STUDENTS', label: 'Siswa', icon: Users },
+    { id: 'HISTORY', label: 'Riwayat', icon: History },
     { id: 'ANALYTICS', label: 'Analitik', icon: PieChart },
   ];
 
@@ -31,7 +33,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView }) =
           return (
             <button
               key={item.id}
-              onClick={() => setActiveView(item.id)}
+              onClick={() => setActiveView(item.id as ViewState)}
               className={`w-full flex items-center justify-center lg:justify-start space-x-0 lg:space-x-3 px-3 lg:px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 group relative ${
                 isActive 
                   ? 'bg-black text-white shadow-md shadow-black/10' 

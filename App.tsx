@@ -2,28 +2,34 @@ import React, { useState } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { StatCard } from './components/StatCard';
 import { AttendanceSheet } from './components/AttendanceSheet';
+import { StudentManagement } from './components/StudentManagement';
+import { ClassManagement } from './components/ClassManagement';
 import { MOCK_CLASSES, MOCK_STUDENTS, generateMockHistory } from './constants';
-import { AttendanceRecord, ViewState } from './types';
+import { AttendanceRecord, ViewState, Student, ClassGroup } from './types';
 import { Users, CheckCircle2, AlertTriangle, ArrowRight, Calendar } from 'lucide-react';
 import { BarChart, Bar, XAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
 const App: React.FC = () => {
   const [activeView, setActiveView] = useState<ViewState>('DASHBOARD');
   const [selectedClassId, setSelectedClassId] = useState<string | null>(null);
+  
+  // State Management for Data (CRUD)
+  const [students, setStudents] = useState<Student[]>(MOCK_STUDENTS);
+  const [classes, setClasses] = useState<ClassGroup[]>(MOCK_CLASSES);
   const [attendanceHistory, setAttendanceHistory] = useState<AttendanceRecord[]>(generateMockHistory());
+  
   const [currentDate] = useState(new Date().toISOString().split('T')[0]);
 
-  // Derived state
-  const selectedClass = MOCK_CLASSES.find(c => c.id === selectedClassId);
-  
-  const totalStudents = MOCK_CLASSES.reduce((acc, c) => acc + c.studentIds.length, 0);
+  // --- Derived State ---
+  const selectedClass = classes.find(c => c.id === selectedClassId);
+  const totalStudents = classes.reduce((acc, c) => acc + c.studentIds.length, 0);
   
   const todayRecords = attendanceHistory.filter(r => r.date === currentDate);
   const todayPresence = todayRecords.filter(r => r.status === 'Hadir').length;
   const todayRate = totalStudents > 0 ? Math.round((todayPresence / totalStudents) * 100) : 0;
 
-  // Prepare Chart Data
-  const chartData = MOCK_CLASSES.map(cls => {
+  // --- Chart Data ---
+  const chartData = classes.map(cls => {
     const classRecords = attendanceHistory.filter(r => r.classId === cls.id);
     const presentCount = classRecords.filter(r => r.status === 'Hadir').length;
     const totalPossible = classRecords.length; 
@@ -35,6 +41,8 @@ const App: React.FC = () => {
     };
   });
 
+  // --- Handlers ---
+
   const handleClassSelect = (classId: string) => {
     setSelectedClassId(classId);
     setActiveView('CLASS_DETAIL');
@@ -45,12 +53,38 @@ const App: React.FC = () => {
       !(r.classId === newRecords[0].classId && r.date === newRecords[0].date)
     );
     setAttendanceHistory([...filteredHistory, ...newRecords]);
-    // Could add toast notification here
     setActiveView('DASHBOARD');
     setSelectedClassId(null);
   };
 
-  const CustomTooltip = ({ active, payload, label }: any) => {
+  // Student CRUD
+  const handleAddStudent = (student: Student) => {
+    setStudents([...students, student]);
+  };
+  const handleUpdateStudent = (updatedStudent: Student) => {
+    setStudents(students.map(s => s.id === updatedStudent.id ? updatedStudent : s));
+  };
+  const handleDeleteStudent = (id: string) => {
+    setStudents(students.filter(s => s.id !== id));
+    // Remove student from all classes
+    setClasses(classes.map(cls => ({
+      ...cls,
+      studentIds: cls.studentIds.filter(sid => sid !== id)
+    })));
+  };
+
+  // Class CRUD
+  const handleAddClass = (cls: ClassGroup) => {
+    setClasses([...classes, cls]);
+  };
+  const handleUpdateClass = (updatedClass: ClassGroup) => {
+    setClasses(classes.map(c => c.id === updatedClass.id ? updatedClass : c));
+  };
+  const handleDeleteClass = (id: string) => {
+    setClasses(classes.filter(c => c.id !== id));
+  };
+
+  const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
       return (
         <div className="bg-black text-white text-xs p-2 rounded-lg shadow-xl">
@@ -86,11 +120,11 @@ const App: React.FC = () => {
               </div>
             </header>
 
-            {/* Stats Grid - Modern Grid */}
+            {/* Stats Grid */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <StatCard 
                 title="Total Siswa" 
-                value={totalStudents} 
+                value={students.length} // Use dynamic length
                 icon={Users} 
               />
               <StatCard 
@@ -109,14 +143,17 @@ const App: React.FC = () => {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full">
-              {/* Class List - Card Style */}
+              {/* Class List */}
               <div className="lg:col-span-2 flex flex-col gap-6">
                 <div className="flex items-center justify-between">
                   <h3 className="text-xl font-display font-bold tracking-tight">Jadwal Kelas</h3>
+                  <button onClick={() => setActiveView('CLASSES')} className="text-sm font-medium text-gray-500 hover:text-black transition-colors">
+                    Kelola Kelas →
+                  </button>
                 </div>
                 
                 <div className="grid gap-4">
-                  {MOCK_CLASSES.map((cls, idx) => (
+                  {classes.length > 0 ? classes.map((cls) => (
                     <div 
                       key={cls.id} 
                       onClick={() => handleClassSelect(cls.id)}
@@ -134,18 +171,20 @@ const App: React.FC = () => {
                       <div className="relative z-10 flex items-center justify-center w-10 h-10 rounded-full bg-gray-50 group-hover:bg-black group-hover:text-white transition-all">
                         <ArrowRight size={18} />
                       </div>
-
-                      {/* Hover Effect Background */}
                       <div className="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-gray-50 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                     </div>
-                  ))}
+                  )) : (
+                    <div className="text-center p-8 bg-white rounded-2xl border border-dashed border-gray-300">
+                      <p className="text-gray-500">Belum ada kelas.</p>
+                    </div>
+                  )}
                 </div>
               </div>
 
-              {/* Chart Card */}
+              {/* Chart */}
               <div className="lg:col-span-1 flex flex-col gap-6">
                  <div className="flex items-center justify-between">
-                  <h3 className="text-xl font-display font-bold tracking-tight">Statistik Mingguan</h3>
+                  <h3 className="text-xl font-display font-bold tracking-tight">Statistik</h3>
                 </div>
                 <div className="bg-white p-6 rounded-2xl border border-border h-[300px] shadow-sm flex flex-col justify-between">
                   <ResponsiveContainer width="100%" height="100%">
@@ -166,22 +205,19 @@ const App: React.FC = () => {
                       </Bar>
                     </BarChart>
                   </ResponsiveContainer>
-                  <div className="text-center mt-4">
-                     <p className="text-xs font-medium text-gray-400 uppercase tracking-wider">Persentase per Kelas</p>
-                  </div>
                 </div>
               </div>
             </div>
           </div>
         )}
 
-        {/* CLASS ATTENDANCE VIEW */}
+        {/* CLASS DETAIL (ATTENDANCE) VIEW */}
         {activeView === 'CLASS_DETAIL' && selectedClass && (
           <AttendanceSheet 
             classId={selectedClass.id}
             className={selectedClass.name}
             date={currentDate}
-            students={MOCK_STUDENTS.filter(s => selectedClass.studentIds.includes(s.id))}
+            students={students.filter(s => selectedClass.studentIds.includes(s.id))}
             existingRecords={attendanceHistory}
             onSave={handleSaveAttendance}
             onBack={() => {
@@ -191,14 +227,35 @@ const App: React.FC = () => {
           />
         )}
 
-        {/* PLACEHOLDER FOR OTHER VIEWS */}
-        {(activeView === 'HISTORY' || activeView === 'STUDENTS' || activeView === 'ANALYTICS') && (
+        {/* STUDENT MANAGEMENT VIEW */}
+        {activeView === 'STUDENTS' && (
+          <StudentManagement 
+            students={students}
+            onAdd={handleAddStudent}
+            onUpdate={handleUpdateStudent}
+            onDelete={handleDeleteStudent}
+          />
+        )}
+
+        {/* CLASS MANAGEMENT VIEW */}
+        {activeView === 'CLASSES' && (
+          <ClassManagement 
+            classes={classes}
+            students={students}
+            onAdd={handleAddClass}
+            onUpdate={handleUpdateClass}
+            onDelete={handleDeleteClass}
+          />
+        )}
+
+        {/* PLACEHOLDERS */}
+        {(activeView === 'HISTORY' || activeView === 'ANALYTICS') && (
           <div className="flex flex-col items-center justify-center h-[80vh] text-center animate-fade-in">
              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
                 <Users className="text-gray-400" size={24} />
              </div>
              <h3 className="text-lg font-bold text-black mb-2">Dalam Pengembangan</h3>
-             <p className="text-gray-500 max-w-md">Fitur ini sedang disiapkan oleh tim teknis kami untuk update berikutnya.</p>
+             <p className="text-gray-500 max-w-md">Fitur ini sedang disiapkan.</p>
           </div>
         )}
 
