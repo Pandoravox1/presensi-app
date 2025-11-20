@@ -11,13 +11,19 @@ const ensureClient = () => {
 const mapStudent = (row: any): Student => ({
   id: row.id,
   name: row.name,
-  rollNumber: row.roll_number,
+  email: row.email || undefined,
+  homeroomClass: row.homeroom_class || undefined,
+  gender: row.gender || undefined,
+  rollNumber: row.roll_number || undefined,
   avatarUrl: row.avatar_url || undefined,
 });
 
 export const fetchStudents = async (): Promise<Student[]> => {
   const client = ensureClient();
-  const { data, error } = await client.from('students').select('id,name,roll_number,avatar_url').order('name', { ascending: true });
+  const { data, error } = await client
+    .from('students')
+    .select('id,name,email,homeroom_class,gender,roll_number,avatar_url')
+    .order('name', { ascending: true });
   if (error) throw error;
   return data?.map(mapStudent) ?? [];
 };
@@ -26,8 +32,15 @@ export const createStudent = async (student: Omit<Student, 'id'>): Promise<Stude
   const client = ensureClient();
   const { data, error } = await client
     .from('students')
-    .insert([{ name: student.name, roll_number: student.rollNumber, avatar_url: student.avatarUrl ?? null }])
-    .select('id,name,roll_number,avatar_url')
+    .insert([{
+      name: student.name,
+      email: student.email ?? null,
+      homeroom_class: student.homeroomClass ?? null,
+      gender: student.gender ?? null,
+      roll_number: student.rollNumber ?? null,
+      avatar_url: student.avatarUrl ?? null
+    }])
+    .select('id,name,email,homeroom_class,gender,roll_number,avatar_url')
     .single();
   if (error) throw error;
   return mapStudent(data);
@@ -37,9 +50,16 @@ export const updateStudent = async (student: Student): Promise<Student> => {
   const client = ensureClient();
   const { data, error } = await client
     .from('students')
-    .update({ name: student.name, roll_number: student.rollNumber, avatar_url: student.avatarUrl ?? null })
+    .update({
+      name: student.name,
+      email: student.email ?? null,
+      homeroom_class: student.homeroomClass ?? null,
+      gender: student.gender ?? null,
+      roll_number: student.rollNumber ?? null,
+      avatar_url: student.avatarUrl ?? null
+    })
     .eq('id', student.id)
-    .select('id,name,roll_number,avatar_url')
+    .select('id,name,email,homeroom_class,gender,roll_number,avatar_url')
     .single();
   if (error) throw error;
   return mapStudent(data);

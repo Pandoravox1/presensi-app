@@ -2,7 +2,10 @@
 create table if not exists students (
   id uuid primary key default gen_random_uuid(),
   name text not null,
-  roll_number text unique not null,
+  email text,
+  homeroom_class text,
+  gender text,
+  roll_number text,
   avatar_url text
 );
 
@@ -47,4 +50,3 @@ create policy "anon all attendance" on attendance for all using (true) with chec
 -- create policy "anon select class_students" on class_students for select using (true);
 -- create policy "anon select attendance" on attendance for select using (true);
 -- Then put inserts/updates/deletes behind a service-role proxy (Edge Function/API Route) that includes your service key.
-

@@ -8,7 +8,10 @@ export enum AttendanceStatus {
 export interface Student {
   id: string;
   name: string;
-  rollNumber: string;
+  email?: string;
+  homeroomClass?: string; // kelas asal/wali kelas
+  gender?: 'Laki-laki' | 'Perempuan';
+  rollNumber?: string; // legacy fallback
   avatarUrl?: string;
 }
 

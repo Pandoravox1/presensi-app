@@ -131,15 +131,16 @@ export const AttendanceSheet: React.FC<AttendanceSheetProps> = ({
         <div className="divide-y divide-gray-100">
           {students.map((student) => {
             const currentStatus = records.get(student.id);
+            const badgeText = student.homeroomClass ? student.homeroomClass.slice(0, 6) : student.name.slice(0, 2).toUpperCase();
             return (
               <div key={student.id} className="grid grid-cols-12 items-center py-4 px-6 hover:bg-gray-50/80 transition-colors group">
                 <div className="col-span-12 md:col-span-4 flex items-center gap-4 mb-4 md:mb-0">
                   <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-xs font-bold text-gray-600 border border-gray-200 group-hover:border-gray-300 transition-colors">
-                    {student.rollNumber}
+                    {badgeText}
                   </div>
                   <div>
                     <p className="font-bold text-gray-900 text-sm">{student.name}</p>
-                    <p className="text-xs text-gray-400 hidden md:block">ID: {student.id}</p>
+                    <p className="text-xs text-gray-400 hidden md:block">{student.email || student.homeroomClass || 'ID: ' + student.id}</p>
                   </div>
                 </div>
                 

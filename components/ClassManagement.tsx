@@ -170,7 +170,7 @@ export const ClassManagement: React.FC<ClassManagementProps> = ({ classes, stude
                   }`}
                 >
                   <span className="text-sm font-medium">{student.name}</span>
-                  <span className="text-xs opacity-70">{student.rollNumber}</span>
+                  <span className="text-xs opacity-70">{student.homeroomClass || student.email || 'Siswa'}</span>
                 </div>
               ))}
               {students.length === 0 && <p className="text-xs text-gray-400 p-2">Belum ada data siswa.</p>}

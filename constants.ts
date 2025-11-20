@@ -1,18 +1,18 @@
 import { ClassGroup, Student, AttendanceStatus, AttendanceRecord } from './types';
 
 export const MOCK_STUDENTS: Student[] = [
-  { id: 's1', name: 'Aditya Pratama', rollNumber: 'A001' },
-  { id: 's2', name: 'Budi Santoso', rollNumber: 'A002' },
-  { id: 's3', name: 'Citra Dewi', rollNumber: 'A003' },
-  { id: 's4', name: 'Dian Sastro', rollNumber: 'A004' },
-  { id: 's5', name: 'Eko Purnomo', rollNumber: 'A005' },
-  { id: 's6', name: 'Fanny Maharani', rollNumber: 'A006' },
-  { id: 's7', name: 'Gilang Ramadhan', rollNumber: 'A007' },
-  { id: 's8', name: 'Hana Kartika', rollNumber: 'A008' },
-  { id: 's9', name: 'Indra Lesmana', rollNumber: 'A009' },
-  { id: 's10', name: 'Joko Anwar', rollNumber: 'A010' },
-  { id: 's11', name: 'Kartini Supratman', rollNumber: 'A011' },
-  { id: 's12', name: 'Lukman Sardi', rollNumber: 'A012' },
+  { id: 's1', name: 'Aditya Pratama', homeroomClass: 'XII IPA 1', email: 'aditya@example.com', gender: 'Laki-laki' },
+  { id: 's2', name: 'Budi Santoso', homeroomClass: 'XII IPA 1', email: 'budi@example.com', gender: 'Laki-laki' },
+  { id: 's3', name: 'Citra Dewi', homeroomClass: 'XI IPS 2', email: 'citra@example.com', gender: 'Perempuan' },
+  { id: 's4', name: 'Dian Sastro', homeroomClass: 'XI IPS 2', email: 'dian@example.com', gender: 'Perempuan' },
+  { id: 's5', name: 'Eko Purnomo', homeroomClass: 'X Bahasa', email: 'eko@example.com', gender: 'Laki-laki' },
+  { id: 's6', name: 'Fanny Maharani', homeroomClass: 'X Bahasa', email: 'fanny@example.com', gender: 'Perempuan' },
+  { id: 's7', name: 'Gilang Ramadhan', homeroomClass: 'XII IPA 1', email: 'gilang@example.com', gender: 'Laki-laki' },
+  { id: 's8', name: 'Hana Kartika', homeroomClass: 'XI IPS 2', email: 'hana@example.com', gender: 'Perempuan' },
+  { id: 's9', name: 'Indra Lesmana', homeroomClass: 'X Bahasa', email: 'indra@example.com', gender: 'Laki-laki' },
+  { id: 's10', name: 'Joko Anwar', homeroomClass: 'X Bahasa', email: 'joko@example.com', gender: 'Laki-laki' },
+  { id: 's11', name: 'Kartini Supratman', homeroomClass: 'XI IPS 2', email: 'kartini@example.com', gender: 'Perempuan' },
+  { id: 's12', name: 'Lukman Sardi', homeroomClass: 'XII IPA 1', email: 'lukman@example.com', gender: 'Laki-laki' },
 ];
 
 export const MOCK_CLASSES: ClassGroup[] = [

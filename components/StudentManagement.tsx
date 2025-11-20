@@ -15,22 +15,32 @@ export const StudentManagement: React.FC<StudentManagementProps> = ({ students, 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingStudent, setEditingStudent] = useState<Student | null>(null);
   
-  const [formData, setFormData] = useState({ name: '', rollNumber: '' });
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    homeroomClass: '',
+    gender: '' as Student['gender'],
+  });
 
   const filteredStudents = students.filter(s => 
     s.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    s.rollNumber.toLowerCase().includes(searchTerm.toLowerCase())
+    (s.email || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const handleOpenAdd = () => {
     setEditingStudent(null);
-    setFormData({ name: '', rollNumber: '' });
+    setFormData({ name: '', email: '', homeroomClass: '', gender: '' });
     setIsModalOpen(true);
   };
 
   const handleOpenEdit = (student: Student) => {
     setEditingStudent(student);
-    setFormData({ name: student.name, rollNumber: student.rollNumber });
+    setFormData({ 
+      name: student.name, 
+      email: student.email || '',
+      homeroomClass: student.homeroomClass || '',
+      gender: student.gender || '',
+    });
     setIsModalOpen(true);
   };
 
@@ -65,7 +75,7 @@ export const StudentManagement: React.FC<StudentManagementProps> = ({ students, 
         <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
         <input 
           type="text" 
-          placeholder="Cari siswa berdasarkan nama atau nomor..." 
+          placeholder="Cari siswa berdasarkan nama atau email..." 
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="w-full pl-12 pr-4 py-3 rounded-xl border border-border focus:border-black focus:ring-1 focus:ring-black outline-none transition-all"
@@ -75,8 +85,8 @@ export const StudentManagement: React.FC<StudentManagementProps> = ({ students, 
       {/* Student List */}
       <div className="bg-white border border-border rounded-2xl shadow-sm overflow-hidden">
         <div className="grid grid-cols-12 bg-gray-50/50 border-b border-border text-xs font-semibold text-gray-500 uppercase tracking-wider py-4 px-6">
-          <div className="col-span-2 md:col-span-2">ID / NIS</div>
-          <div className="col-span-7 md:col-span-8">Nama Lengkap</div>
+          <div className="col-span-2 md:col-span-2">Kelas/Wali</div>
+          <div className="col-span-7 md:col-span-8">Nama & Email</div>
           <div className="col-span-3 md:col-span-2 text-right">Aksi</div>
         </div>
         <div className="divide-y divide-gray-100">
@@ -84,13 +94,16 @@ export const StudentManagement: React.FC<StudentManagementProps> = ({ students, 
             filteredStudents.map((student) => (
               <div key={student.id} className="grid grid-cols-12 items-center py-4 px-6 hover:bg-gray-50 transition-colors group">
                 <div className="col-span-2 md:col-span-2 font-mono text-xs text-gray-500 bg-gray-100 w-fit px-2 py-1 rounded">
-                  {student.rollNumber}
+                  {(student.homeroomClass || 'Kelas ?').slice(0, 10)}
                 </div>
                 <div className="col-span-7 md:col-span-8 font-medium text-black flex items-center gap-3">
                   <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500">
                     <User size={14} />
                   </div>
-                  {student.name}
+                  <div className="flex flex-col">
+                    <span>{student.name}</span>
+                    <span className="text-xs text-gray-500">{student.email || 'Tidak ada email'}</span>
+                  </div>
                 </div>
                 <div className="col-span-3 md:col-span-2 flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                   <button 
@@ -134,15 +147,36 @@ export const StudentManagement: React.FC<StudentManagementProps> = ({ students, 
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Nomor Induk / Absen</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Kelas Asal / Wali Kelas</label>
             <input 
               type="text" 
-              required
-              value={formData.rollNumber}
-              onChange={e => setFormData({...formData, rollNumber: e.target.value})}
+              value={formData.homeroomClass}
+              onChange={e => setFormData({...formData, homeroomClass: e.target.value})}
               className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:border-black focus:ring-1 focus:ring-black outline-none transition-all"
-              placeholder="Contoh: A001"
+              placeholder="Misal: XII IPA 1"
             />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+            <input 
+              type="email" 
+              value={formData.email}
+              onChange={e => setFormData({...formData, email: e.target.value})}
+              className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:border-black focus:ring-1 focus:ring-black outline-none transition-all"
+              placeholder="misal: nama@sekolah.sch.id"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Jenis Kelamin</label>
+            <select
+              value={formData.gender}
+              onChange={e => setFormData({...formData, gender: e.target.value as Student['gender']})}
+              className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:border-black focus:ring-1 focus:ring-black outline-none transition-all bg-white"
+            >
+              <option value="">Pilih</option>
+              <option value="Laki-laki">Laki-laki</option>
+              <option value="Perempuan">Perempuan</option>
+            </select>
           </div>
           <div className="pt-4 flex justify-end gap-3">
             <button 
