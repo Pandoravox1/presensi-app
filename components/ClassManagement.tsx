@@ -21,10 +21,16 @@ export const ClassManagement: React.FC<ClassManagementProps> = ({ classes, stude
     schedule: '',
     studentIds: [] as string[]
   });
+  const [studentSearch, setStudentSearch] = useState('');
+  const [scheduleSlots, setScheduleSlots] = useState<{ day: string; start: string; end: string }[]>([
+    { day: '', start: '', end: '' }
+  ]);
 
   const handleOpenAdd = () => {
     setEditingClass(null);
     setFormData({ name: '', subject: '', schedule: '', studentIds: [] });
+    setScheduleSlots([{ day: '', start: '', end: '' }]);
+    setStudentSearch('');
     setIsModalOpen(true);
   };
 
@@ -36,6 +42,17 @@ export const ClassManagement: React.FC<ClassManagementProps> = ({ classes, stude
       schedule: cls.schedule,
       studentIds: cls.studentIds 
     });
+    const slots = cls.schedule
+      .split(';')
+      .map(s => s.trim())
+      .filter(Boolean)
+      .map(item => {
+        const match = item.match(/^([^,]+),\s*(\d{2}:\d{2})\s*-\s*(\d{2}:\d{2})/);
+        return match ? { day: match[1], start: match[2], end: match[3] } : { day: '', start: '', end: '' };
+      })
+      .filter(slot => slot.day || slot.start || slot.end);
+    setScheduleSlots(slots.length ? slots : [{ day: '', start: '', end: '' }]);
+    setStudentSearch('');
     setIsModalOpen(true);
   };
 
@@ -48,12 +65,26 @@ export const ClassManagement: React.FC<ClassManagementProps> = ({ classes, stude
     });
   };
 
+  const filteredStudents = students.filter((s) => {
+    const term = studentSearch.toLowerCase();
+    return (
+      s.name.toLowerCase().includes(term) ||
+      (s.email || '').toLowerCase().includes(term) ||
+      (s.homeroomClass || '').toLowerCase().includes(term)
+    );
+  });
+
+  const scheduleString = scheduleSlots
+    .filter(s => s.day && s.start && s.end)
+    .map(s => `${s.day}, ${s.start}-${s.end}`)
+    .join('; ');
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (editingClass) {
-      onUpdate({ ...editingClass, ...formData });
+      onUpdate({ ...editingClass, ...formData, schedule: scheduleString });
     } else {
-      onAdd({ ...formData });
+      onAdd({ ...formData, schedule: scheduleString });
     }
     setIsModalOpen(false);
   };
@@ -146,20 +177,88 @@ export const ClassManagement: React.FC<ClassManagementProps> = ({ classes, stude
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Jadwal</label>
-            <input 
-              type="text" 
-              required
-              value={formData.schedule}
-              onChange={e => setFormData({...formData, schedule: e.target.value})}
-              className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:border-black focus:ring-1 focus:ring-black outline-none"
-              placeholder="Misal: Senin, 08:00"
-            />
+            <div className="space-y-2">
+              {scheduleSlots.map((slot, idx) => (
+                <div key={`${idx}-${slot.day}-${slot.start}`} className="grid grid-cols-1 md:grid-cols-4 gap-2 items-center">
+                  <select
+                    value={slot.day}
+                    onChange={(e) => {
+                      const next = [...scheduleSlots];
+                      next[idx] = { ...next[idx], day: e.target.value };
+                      setScheduleSlots(next);
+                    }}
+                    className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:border-black focus:ring-1 focus:ring-black outline-none bg-white"
+                  >
+                    <option value="">Pilih Hari</option>
+                    <option value="Senin">Senin</option>
+                    <option value="Selasa">Selasa</option>
+                    <option value="Rabu">Rabu</option>
+                    <option value="Kamis">Kamis</option>
+                    <option value="Jumat">Jumat</option>
+                    <option value="Sabtu">Sabtu</option>
+                    <option value="Minggu">Minggu</option>
+                  </select>
+                  <input
+                    type="time"
+                    value={slot.start}
+                    onChange={(e) => {
+                      const next = [...scheduleSlots];
+                      next[idx] = { ...next[idx], start: e.target.value };
+                      setScheduleSlots(next);
+                    }}
+                    className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:border-black focus:ring-1 focus:ring-black outline-none"
+                  />
+                  <input
+                    type="time"
+                    value={slot.end}
+                    onChange={(e) => {
+                      const next = [...scheduleSlots];
+                      next[idx] = { ...next[idx], end: e.target.value };
+                      setScheduleSlots(next);
+                    }}
+                    className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:border-black focus:ring-1 focus:ring-black outline-none"
+                  />
+                  <div className="flex gap-2 justify-end">
+                    {scheduleSlots.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => setScheduleSlots(scheduleSlots.filter((_, i) => i !== idx))}
+                        className="px-3 py-2 text-xs text-red-500 hover:bg-red-50 rounded-lg border border-red-100"
+                      >
+                        Hapus
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+              <div className="flex justify-between items-center">
+                <button
+                  type="button"
+                  onClick={() => setScheduleSlots([...scheduleSlots, { day: '', start: '', end: '' }])}
+                  className="text-sm font-medium text-black hover:underline"
+                >
+                  + Tambah Jadwal
+                </button>
+                <span className="text-xs text-gray-400">
+                  Jadwal akan disimpan sebagai: {scheduleString || 'Belum dipilih'}
+                </span>
+              </div>
+            </div>
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Pilih Siswa</label>
+            <div className="mb-2">
+              <input
+                type="text"
+                value={studentSearch}
+                onChange={(e) => setStudentSearch(e.target.value)}
+                placeholder="Cari siswa (nama/email/kelas)..."
+                className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:border-black focus:ring-1 focus:ring-black outline-none"
+              />
+            </div>
             <div className="max-h-48 overflow-y-auto border border-gray-200 rounded-xl p-2 space-y-1">
-              {students.map(student => (
+              {filteredStudents.map(student => (
                 <div 
                   key={student.id}
                   onClick={() => toggleStudent(student.id)}
@@ -174,6 +273,9 @@ export const ClassManagement: React.FC<ClassManagementProps> = ({ classes, stude
                 </div>
               ))}
               {students.length === 0 && <p className="text-xs text-gray-400 p-2">Belum ada data siswa.</p>}
+              {filteredStudents.length === 0 && students.length > 0 && (
+                <p className="text-xs text-gray-400 p-2">Tidak ada siswa yang cocok.</p>
+              )}
             </div>
             <p className="text-xs text-gray-400 mt-1 text-right">{formData.studentIds.length} siswa dipilih</p>
           </div>
